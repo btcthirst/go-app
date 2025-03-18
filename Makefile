@@ -1,3 +1,10 @@
+include .env
+
+PHONY: run
+run:
+	go build -o ./bin/app .
+	./bin/app
+
 PHONY: docker-build
 docker-build:
 	docker build --tag go-app .
@@ -8,7 +15,7 @@ docker-build-multistage:
 
 PHONY: docker-run
 docker-run:
-	docker run --publish 8080:8080 --name server go-app
+	docker run --publish ${PORT}:${PORT} --name rest-server go-app
 
 PHONY: ls
 ls:
@@ -29,7 +36,7 @@ db:
   --hostname db \
   --network mynet \
   -p 26257:26257 \
-  -p 8080:8080 \
+  -p ${PORT}:${PORT} \
   -v roach:/cockroach/cockroach-data \
   cockroachdb/cockroach:latest-v24.3 start-single-node \
   --insecure
@@ -38,7 +45,7 @@ db:
 
 PHONY: up
 up:
-	docker compose up --build
+	COMPOSE_BAKE=true docker compose up --build
 
 PHONY: down
 down:

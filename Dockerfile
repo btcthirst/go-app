@@ -1,27 +1,26 @@
 # syntax=docker/dockerfile:1
 
-FROM golang:1.23
+# Build the application from source
+FROM golang:1.23 AS build-stage
 
-# Set destination for COPY
 WORKDIR /app
 
-# Download Go modules
-COPY go.mod go.sum ./
+COPY . .
 RUN go mod download
 
-# Copy the source code. Note the slash at the end, as explained in
-# https://docs.docker.com/reference/dockerfile/#copy
-COPY *.go ./
+RUN CGO_ENABLED=0 GOOS=linux go build -o /go-app .
 
-# Build
-RUN CGO_ENABLED=0 GOOS=linux go build -o /go-app
+# Run the tests in the container
+FROM build-stage AS run-test-stage
+RUN go test -v ./...
 
-# Optional:
-# To bind to a TCP port, runtime parameters must be supplied to the docker command.
-# But we can document in the Dockerfile what ports
-# the application is going to listen on by default.
-# https://docs.docker.com/reference/dockerfile/#expose
-EXPOSE 8080
+# Deploy the application binary into a lean image
+FROM alpine:latest AS build-release-stage
 
-# Run
+WORKDIR /
+
+COPY --from=build-stage /go-app /go-app
+
+EXPOSE 8000
+
 CMD ["/go-app"]

@@ -1,19 +1,20 @@
-version: "3.8"
-
+version: '3.8'
 services:
-  go-app-roach:
+  api-roach:
     depends_on:
       - roach
     build:
       context: .
+      target: ${STAGE}
     container_name: rest-server
     hostname: rest-server
     networks:
       - mynet
     ports:
-      - 80:8080
+      - ${PORT}:${PORT}
     environment:
-      - PGUSER=${PGUSER:-totoro}
+      - PORT=${PORT}
+      - PGUSER=${PGUSER:-dev}
       - PGPASSWORD=${PGPASSWORD:?database password not set}
       - PGHOST=${PGHOST:-db}
       - PGPORT=${PGPORT:-26257}
@@ -28,8 +29,8 @@ services:
     networks:
       - mynet
     ports:
-      - 26257:26257
-      - 8080:8080
+      - ${PGPORT:-26257}:${PGPORT:-26257}
+      - ${CRPORT:-8080}:${CRPORT:-8080}
     volumes:
       - roach:/cockroach/cockroach-data
     command: start-single-node --insecure

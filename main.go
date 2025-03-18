@@ -15,7 +15,7 @@ import (
 )
 
 func main() {
-
+	fmt.Println("point main 0")
 	e := echo.New()
 
 	e.Use(middleware.Logger())
@@ -26,7 +26,7 @@ func main() {
 		log.Fatalf("failed to initialize the store: %s", err)
 	}
 	defer db.Close()
-
+	fmt.Println("point main 1")
 	e.GET("/", func(c echo.Context) error {
 		return rootHandler(db, c)
 	})
@@ -39,9 +39,11 @@ func main() {
 		return sendHandler(db, c)
 	})
 
-	httpPort := os.Getenv("HTTP_PORT")
+	httpPort := os.Getenv("PORT")
+	fmt.Println("from os.getenv: ", httpPort)
 	if httpPort == "" {
 		httpPort = "8080"
+		fmt.Println("from =: ", httpPort)
 	}
 
 	e.Logger.Fatal(e.Start(":" + httpPort))
@@ -52,7 +54,7 @@ type Message struct {
 }
 
 func initStore() (*sql.DB, error) {
-
+	fmt.Println("point init store 0")
 	pgConnString := fmt.Sprintf("host=%s port=%s dbname=%s user=%s password=%s sslmode=disable",
 		os.Getenv("PGHOST"),
 		os.Getenv("PGPORT"),
@@ -65,16 +67,17 @@ func initStore() (*sql.DB, error) {
 		db  *sql.DB
 		err error
 	)
+	fmt.Println("point init store 1")
 	openDB := func() error {
 		db, err = sql.Open("postgres", pgConnString)
 		return err
 	}
-
+	fmt.Println("point init store 2")
 	err = backoff.Retry(openDB, backoff.NewExponentialBackOff())
 	if err != nil {
 		return nil, err
 	}
-
+	fmt.Println("point init store 3")
 	if _, err := db.Exec(
 		"CREATE TABLE IF NOT EXISTS message (value TEXT PRIMARY KEY)"); err != nil {
 		return nil, err
@@ -84,6 +87,7 @@ func initStore() (*sql.DB, error) {
 }
 
 func rootHandler(db *sql.DB, c echo.Context) error {
+	fmt.Println("point root h")
 	r, err := countRecords(db)
 	if err != nil {
 		return c.HTML(http.StatusInternalServerError, err.Error())
@@ -92,7 +96,7 @@ func rootHandler(db *sql.DB, c echo.Context) error {
 }
 
 func sendHandler(db *sql.DB, c echo.Context) error {
-
+	fmt.Println("point send h")
 	m := &Message{}
 
 	if err := c.Bind(m); err != nil {
@@ -119,7 +123,7 @@ func sendHandler(db *sql.DB, c echo.Context) error {
 }
 
 func countRecords(db *sql.DB) (int, error) {
-
+	fmt.Println("point count")
 	rows, err := db.Query("SELECT COUNT(*) FROM message")
 	if err != nil {
 		return 0, err
